@@ -108,9 +108,16 @@ module RocketPants
           parameters[:version] = _default_version
         end
       else
-        if _default_version.present? && parameters[:params][:version].blank?
-          parameters[:params][:version] = _default_version
-        end
+        # In Rails 5.0 positional arguments are deprecated but not removed
+        # If the tests are using positional arguments then the tests fail
+        # The lines below ensure that both positional and named arguments
+        # can be handled correctly
+        parameters = {params: args[1] || {}} unless parameters.is_a?(Hash)
+        parameters[:method] = args[0] unless parameters[:method]
+        parameters[:params][:version] = args[1].try(:[], :version) || args[1].try(:[], 'version') || _default_version unless parameters[:params][:version]
+        parameters[:as] = parameters[:params].delete(:format) unless parameters[:as]
+
+        args = [parameters]
       end
 
       super action, *args
